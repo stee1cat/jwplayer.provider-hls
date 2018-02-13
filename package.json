@@ -1,0 +1,25 @@
+{
+  "name": "jwplayer.provider-hls",
+  "version": "0.1.0",
+  "description": "HLS provider for JWPlayer",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "webpack --display-chunks",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stee1cat/jwplayer.provider-hls.git"
+  },
+  "author": "Gennadiy Khatuntsev <e.steelcat@gmail.com>",
+  "license": "ISC",
+  "dependencies": {
+    "hls.js": "^0.8.9"
+  },
+  "devDependencies": {
+    "ts-loader": "^3.5.0",
+    "tslint": "^5.9.1",
+    "typescript": "^2.7.1",
+    "webpack": "^3.11.0"
+  }
+}
