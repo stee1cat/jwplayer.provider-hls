@@ -37,12 +37,35 @@ export default class Provider {
         return !Provider.disabled && isSupportSrc(src) && Hls.isSupported();
     }
 
-    protected static disabled: boolean = false;
-    protected jwplayer: any;
-    protected attached = true;
+    protected static disabled: boolean = true;
+    protected player: any;
+    protected attached = false;
+    protected element: HTMLElement;
+    protected video: HTMLVideoElement;
+    protected hls: Hls;
 
     constructor(id) {
-        this.jwplayer = window.jwplayer;
+        this.player = window.jwplayer(id);
+
+        this.element = document.getElementById(id);
+        this.video = this.element ? this.element.querySelector('video') : undefined;
+
+        if (!this.video) {
+            this.video = document.createElement('video');
+        }
+
+        this.video.className = 'jw-video jw-reset';
+
+        this.hls = new Hls({});
+
+        if (this.player) {
+            this.player.provider = this;
+            this.player.hls = this.hls;
+        }
+    }
+
+    public init() {
+        // nope
     }
 
 }

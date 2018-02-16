@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <base href="<%= htmlWebpackPlugin.options.metadata.baseUrl %>">
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">
+        <title><%= htmlWebpackPlugin.options.title %></title>
+    </head>
+    <body>
+        <div id="player">Loading the player...</div>
+        <script type="application/javascript" src="<%= htmlWebpackPlugin.options.metadata.playerUrl %>"></script>
+        <script type="application/javascript" src="jwplayer.provider-hls.js"></script>
+        <script>
+            hlsProvider.attach();
+            jwplayer.key = "<%= htmlWebpackPlugin.options.metadata.apiKey %>";
+
+            var player = jwplayer('player')
+                .setup({
+                    file: '<%= htmlWebpackPlugin.options.metadata.manifestUrl %>',
+                    autostart: true,
+                    mute: true,
+                    height: 360,
+                    width: 640
+                });
+        </script>
+    </body>
+</html>
