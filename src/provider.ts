@@ -2,6 +2,7 @@ import * as EventEmitter from 'eventemitter3';
 import Hls from 'hls.js';
 
 import { JWPlayerEvents } from './events';
+import { JWPlayerStates } from './states';
 import { formatLevelLabel, isSupportSrc } from './util';
 
 export interface ISource {
@@ -47,6 +48,45 @@ export default class Provider {
     protected video: HTMLVideoElement;
     protected hls: Hls;
     protected eventEmitter: EventEmitter;
+    protected state: string = JWPlayerStates.Idle;
+    protected visualQuality = {
+        reason: 'initial choice',
+        mode: 'auto',
+        level: {
+            index: 0,
+            label: ''
+        }
+    };
+
+    protected videoListeners = {
+        loadstart: () => {
+            this.video.setAttribute('jw-loaded', 'started');
+        },
+        loadeddata: () => {
+            this.video.setAttribute('jw-loaded', 'data');
+        },
+        loadedmetadata: () => {
+            this.video.setAttribute('jw-loaded', 'meta');
+        },
+        canplay: () => {
+            this.trigger(JWPlayerEvents.JWPLAYER_MEDIA_BUFFER_FULL);
+        },
+        playing: () => {
+            let video = this.video;
+
+            this.setState(JWPlayerStates.Playing);
+            if (!video.hasAttribute('jw-played')) {
+                video.setAttribute('jw-played', '');
+            }
+
+            if (video.hasAttribute('jw-gesture-required')) {
+                video.removeAttribute('jw-gesture-required');
+                video.removeAttribute('autoplay-failed');
+            }
+
+            this.trigger(JWPlayerEvents.JWPLAYER_PROVIDER_FIRST_FRAME);
+        }
+    };
 
     constructor(id) {
         this.player = window.jwplayer(id);
@@ -69,9 +109,16 @@ export default class Provider {
             this.player.hls = this.hls;
 
             this.hls.on(Hls.Events.MANIFEST_LOADED, this.onManifestLoaded.bind(this));
+            this.hls.on(Hls.Events.LEVEL_SWITCH, this.onLevelSwitch.bind(this));
         }
 
         this.eventEmitter = new EventEmitter();
+
+        for (let event in this.videoListeners) {
+            if (this.videoListeners.hasOwnProperty(event)) {
+                this.video.addEventListener(event, this.wrapVideoListener(event), false);
+            }
+        }
     }
 
     public init() {
@@ -131,6 +178,56 @@ export default class Provider {
     public setContainer(element: HTMLElement) {
         this.container = element;
         this.container.appendChild(this.video);
+    }
+
+    protected setState(state: string) {
+        let oldState = this.state;
+
+        this.state = state;
+
+        if (state === oldState) {
+            return;
+        }
+
+        this.trigger(JWPlayerEvents.JWPLAYER_PLAYER_STATE, {
+            newstate: state
+        });
+    }
+
+    protected complete() {
+        this.setState(JWPlayerStates.Complete);
+        this.trigger(JWPlayerEvents.JWPLAYER_MEDIA_COMPLETE);
+    }
+
+    protected wrapVideoListener(event: string) {
+        return () => {
+            if (!this.attached) {
+                return;
+            }
+
+            this.videoListeners[event]();
+        };
+    }
+
+    protected onLevelSwitch(e, data) {
+        let levels = this.getLevels();
+        let levelId = this.getCurrentLevel(data.level);
+
+        this.trigger(JWPlayerEvents.JWPLAYER_MEDIA_LEVEL_CHANGED, {
+            currentQuality: levelId.jw,
+            levels
+        });
+
+        let level = levels[levelId.real];
+
+        this.visualQuality.level = level;
+        this.visualQuality.level.index = levelId.real;
+        this.visualQuality.level.label = this.hls.manual_level === -1 && levels.length > 1 ? 'auto' : level.label;
+        this.visualQuality.reason = this.visualQuality.reason || 'auto';
+
+        this.trigger('visualQuality', this.visualQuality);
+
+        this.visualQuality.reason = '';
     }
 
     protected onManifestLoaded() {
