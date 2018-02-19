@@ -15,6 +15,7 @@
   "author": "Gennadiy Khatuntsev <e.steelcat@gmail.com>",
   "license": "ISC",
   "dependencies": {
+    "eventemitter3": "^3.0.1",
     "hls.js": "^0.8.9"
   },
   "devDependencies": {
